@@ -2,12 +2,22 @@ from flask import Flask, request, jsonify
 import requests
 import firebase_admin
 from firebase_admin import credentials, firestore
+import os
 
 # Инициализация Flask
 app = Flask(__name__)
 
-# Инициализация Firebase
-cred = credentials.Certificate(r"C:\Users\snat1\PycharmProjects\pythonProject22\firebase-key.json")
+# Загружаем API-ключи из переменных окружения
+TICKETMASTER_API_KEY = os.getenv("TICKETMASTER_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CX = os.getenv("GOOGLE_CX")
+
+# Инициализация Firebase (ключ теперь загружается из переменной окружения)
+firebase_key = os.getenv("FIREBASE_KEY")
+if not firebase_key:
+    raise ValueError("FIREBASE_KEY is not set in environment variables")
+
+cred = credentials.Certificate(firebase_key)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -15,7 +25,7 @@ db = firestore.client()
 def get_ticketmaster_events():
     url = "https://app.ticketmaster.com/discovery/v2/events.json"
     params = {
-        'apikey': 'P59jKnr7xCEswA82pIAI4cyeL2hnWq2q',
+        'apikey': TICKETMASTER_API_KEY,
         'city': 'New York',
         'classificationName': 'music',
         'size': 5
@@ -35,9 +45,7 @@ def get_ticketmaster_events():
 
 # Функция для получения данных из Google Custom Search
 def get_google_search_results(query):
-    api_key = 'AIzaSyCw1C3DWgsDhqthKtEZ0PbFvyEHEfmJwTc'
-    cx = '40e99c9ba07c64486'
-    url = f"https://www.googleapis.com/customsearch/v1?q={query}&key={api_key}&cx={cx}"
+    url = f"https://www.googleapis.com/customsearch/v1?q={query}&key={GOOGLE_API_KEY}&cx={GOOGLE_CX}"
 
     response = requests.get(url)
 
@@ -78,6 +86,6 @@ def search_events():
         "google_search_results": google_results
     })
 
-# Запуск сервера
+# Запуск сервера (без debug=True)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
